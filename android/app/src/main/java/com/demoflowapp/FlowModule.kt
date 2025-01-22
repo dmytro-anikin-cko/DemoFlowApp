@@ -1,6 +1,7 @@
 package com.demoflowapp
 
 import android.content.Context
+import android.util.Log
 import com.checkout.components.core.CheckoutComponentsFactory
 import com.checkout.components.interfaces.Environment
 import com.checkout.components.interfaces.component.CheckoutComponentConfiguration
@@ -22,7 +23,9 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
     @ReactMethod
     fun startPaymentSession(paymentSessionID: String, paymentSessionToken: String, paymentSessionSecret: String) {
-        // Log.d("FlowModule", "startPaymentSession invoked with ID: $paymentSessionID")
+        Log.d("FlowModule", "Public Key: ${BuildConfig.FLOW_API_KEY}") // Log the public key
+        Log.d("FlowModule", "startPaymentSession invoked with ID: $paymentSessionID")
+        
         // Ensure the current activity is available
         val context = currentActivity as Context? ?: return
 
@@ -43,16 +46,16 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             try {
                 val checkoutComponents = CheckoutComponentsFactory(config = configuration).create()
                 val flowComponent = checkoutComponents.create(ComponentName.Flow)
-                // Log.d("FlowModule", "Flow component created successfully")
+                Log.d("FlowModule", "Flow component created successfully")
 
                 // Render the Flow component
                 currentActivity?.runOnUiThread {
-                    // Log.d("FlowModule", "Rendering Flow component")
+                    Log.d("FlowModule", "Rendering Flow component")
                     flowComponent.Render()
                 }
 
             } catch (checkoutError: CheckoutError) {
-                // Log.e("FlowModule", "Error in creating Flow component", checkoutError)
+                Log.e("FlowModule", "Error in creating Flow component", checkoutError)
                 checkoutError.printStackTrace()
             }
         }
