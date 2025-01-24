@@ -8,6 +8,7 @@ import com.checkout.components.interfaces.component.CheckoutComponentConfigurati
 import com.checkout.components.interfaces.error.CheckoutError
 import com.checkout.components.interfaces.model.ComponentName
 import com.checkout.components.interfaces.model.PaymentSessionResponse
+import com.checkout.components.interfaces.api.CheckoutComponents
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -17,6 +18,8 @@ import kotlinx.coroutines.launch
 
 class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
+    private lateinit var checkoutComponents: CheckoutComponents
+
     override fun getName(): String {
         return "FlowModule"
     }
@@ -25,9 +28,13 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
     fun startPaymentSession(paymentSessionID: String, paymentSessionToken: String, paymentSessionSecret: String) {
         Log.d("FlowModule", "Public Key: ${BuildConfig.FLOW_API_KEY}") // Log the public key
         Log.d("FlowModule", "startPaymentSession invoked with ID: $paymentSessionID")
-        
+        Log.d("currentActivity", "Current Activity: $currentActivity")
+
         // Ensure the current activity is available
         val context = currentActivity as Context? ?: return
+
+        Log.d("Context", "Context: $context")
+
 
         // Configure the Flow SDK
         val configuration = CheckoutComponentConfiguration(
@@ -37,15 +44,20 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
                 paymentSessionToken = paymentSessionToken,
                 paymentSessionSecret = paymentSessionSecret
             ),
-            publicKey = BuildConfig.FLOW_API_KEY, // Replace with your API key
+            publicKey = "pk_sbox_unhsp6d22qf2w4wscmd7yvapmys", // Replace with your API key
             environment = Environment.SANDBOX // Use Environment.LIVE for production
         )
+
+        Log.d("configuration", "Configuration: $configuration")
+
 
         // Initialize Checkout Components in a coroutine
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val checkoutComponents = CheckoutComponentsFactory(config = configuration).create()
-                val flowComponent = checkoutComponents.create(ComponentName.Flow)
+                checkoutComponents = CheckoutComponentsFactory(config = configuration).create()
+                Log.d("checkoutComponents", "CheckoutComponents: $checkoutComponents")
+
+                val flowComponent = checkoutComponents.create(com.checkout.components.interfaces.model.ComponentName.Flow)
                 Log.d("FlowModule", "Flow component created successfully")
 
                 // Render the Flow component
