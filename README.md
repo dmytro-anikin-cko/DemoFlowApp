@@ -14,7 +14,6 @@ Before you begin, ensure the following tools and dependencies are installed:
 - **Android Studio**: Required for managing the Android SDK, emulators, and JDK.
 - **Visual Studio Code (VSC)**: Used as the primary code editor for the React Native project.
 
----
 
 ## 2. Environment Setup
 
@@ -35,7 +34,6 @@ Before you begin, ensure the following tools and dependencies are installed:
 > Note: Open the full project in Visual Studio Code, but open the android folder separately in Android Studio for managing Android-specific tasks.
 >
 
----
 
 ### 2.2 Install Node.js and Manage Versions
 
@@ -93,8 +91,6 @@ Reload the shell configuration:
     ```
     
 
----
-
 ### 2.3 Configure the Java Runtime
 
 React Native requires JDK 17 or higher. Ensure JDK 17 is installed and configured properly.
@@ -142,7 +138,6 @@ After setting up **JAVA_HOME**, ensure Android Studio uses the correct JDK for G
 
 Refer to the screenshot above for clarity. If the JDK version is incorrect or missing, make sure to configure your **JAVA_HOME** correctly in your `.zshrc` file and reload it.
 
----
 
 ### 2.4 Configure the Android SDK
 
@@ -169,8 +164,6 @@ To ensure the Android SDK is properly configured:
     ```
     
 
----
-
 ### 2.5 Increase the System's File Limit (macOS)
 
 To prevent Metro Bundler errors (e.g., `EMFILE: too many open files`):
@@ -187,12 +180,12 @@ To prevent Metro Bundler errors (e.g., `EMFILE: too many open files`):
     source ~/.zshrc
     
     ```
-    
-<details>
-
-<summary>(EXTRA) Understanding the `.zshrc` File</summary>
 
 ### 2.6. (EXTRA) Understanding the `.zshrc` File
+
+<details>
+
+<summary>Learn More</summary>
 
 The `.zshrc` file is a shell configuration file for macOS. It contains environment variable declarations and commands that are executed every time you open a new terminal session. Below is the final configuration I used, with explanations:
 
@@ -213,6 +206,10 @@ ulimit -n 8192 # Increases the file descriptor limit to prevent Metro Bundler er
 </details>
 
 ### **2.7 (EXTRA) Understanding Gradle**
+
+<details>
+
+<summary>Learn More</summary>
 
 Gradle is a powerful build system used for managing project dependencies and automating tasks in Android development. It plays a critical role in compiling, building, and running your React Native project on Android. Gradle handles the following key tasks:
 
@@ -306,6 +303,8 @@ If you encounter dependency or build errors, clear the Gradle cache:
 5. **Use Gradle Wrapper**:
 Always use `./gradlew` instead of `gradle` to ensure you’re using the Gradle version configured for the project.
 
+</details>
+
 ## 3. Create a New React Native Project
 
 ### 3.1 Initialize the Project
@@ -325,7 +324,6 @@ npx @react-native-community/cli init DemoFlowApp
 cd DemoFlowApp
 ```
 
----
 
 ## 4. Build and Run the Project
 
@@ -354,6 +352,9 @@ npx react-native run-android
 > 
 
 ### 4.4 (EXTRA) Understanding Metro
+
+<details>
+<summary>Learn More</summary>
 
 Metro is the JavaScript bundler used by React Native. It processes your JavaScript code, bundles it into a format that your mobile app can understand, and serves it to the app via a development server.
 
@@ -392,6 +393,8 @@ If Metro serves outdated files, reset its cache with:
     
 
 Metro is a critical part of the React Native development process. Ensuring it runs smoothly will save time and help avoid unexpected issues.
+
+</details>
 
 ## 5. Verify Setup
 
