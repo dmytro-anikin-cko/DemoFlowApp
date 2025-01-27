@@ -437,7 +437,7 @@ This section outlines the steps to integrate Checkout.com's Flow SDK into the Re
 
 To integrate the Flow SDK, the following changes were made to the Gradle files:
 
-### `android/settings.gradle`
+#### `android/settings.gradle`
 
 This file ensures the required repositories and plugins are included for resolving dependencies.
 
@@ -446,32 +446,9 @@ This file ensures the required repositories and plugins are included for resolvi
 - Added `mavenCentral()` to the `repositories` block to fetch the Flow SDK and other dependencies.
 - Included the `react-native-gradle-plugin`.
 
-**Final Look:**
+---
 
-```
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral() // Ensures dependencies can be resolved
-        includeBuild("../node_modules/@react-native/gradle-plugin")
-    }
-}
-plugins {
-    id("com.facebook.react.settings")
-}
-extensions.configure(com.facebook.react.ReactSettingsExtension) { ex -> ex.autolinkLibrariesFromCommand() }
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral() // Ensures Flow SDK can be fetched
-    }
-}
-rootProject.name = 'DemoFlowApp'
-include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
-```
-
-### `android/gradle.properties`
+#### `android/gradle.properties`
 
 This file contains project-wide Gradle settings.
 
@@ -481,19 +458,9 @@ This file contains project-wide Gradle settings.
 - `android.useAndroidX=true` and `android.enableJetifier=true`: Ensures compatibility with AndroidX libraries.
 - `org.gradle.jvmargs=-Xmx2048m`: Increases Gradle's memory allocation to avoid build failures.
 
-**Final Look:**
-
-```
-hermesEnabled=true
-android.useAndroidX=true
-android.enableJetifier=true
-org.gradle.jvmargs=-Xmx2048m
-android.enableJetifier=false
-```
-
 ---
 
-### `android/build.gradle`
+#### `android/build.gradle`
 
 This file configures project-level Gradle settings.
 
@@ -502,43 +469,9 @@ This file configures project-level Gradle settings.
 - Added `mavenCentral()` to the `repositories` block.
 - Specified Kotlin and Gradle plugin versions compatible with the Flow SDK.
 
-**Final Look:**
-
-```
-buildscript {
-    ext {
-        buildToolsVersion = "35.0.0"
-        minSdkVersion = 24
-        compileSdkVersion = 35
-        targetSdkVersion = 34
-        ndkVersion = "26.1.10909125"
-        kotlinVersion = "1.9.24"
-    }
-    repositories {
-        google()
-        mavenCentral() // Ensures required dependencies are fetched
-    }
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.0.0")
-        classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10")
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' } // Required for additional dependencies, if any
-    }
-}
-
-apply plugin: "com.facebook.react.rootproject"
-```
-
 ---
 
-### `android/app/build.gradle`
+#### `android/app/build.gradle`
 
 This file configures app-level Gradle settings.
 
@@ -547,60 +480,15 @@ This file configures app-level Gradle settings.
 - Added the Flow SDK dependency: `implementation("com.checkout:checkout-android-components:1.0.0-beta-1")`.
 - Defined `FLOW_API_KEY` in `buildConfigField` for secure API key management.
 
-**Final Look:**
 
-```
-apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "com.facebook.react"
-apply plugin: "kotlin-android"
+### 6.2 Add Native Modules & Bridge
 
-android {
-    ndkVersion rootProject.ext.ndkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
+#### `FlowModule.kt`
 
-    namespace "com.demoflowapp"
-    defaultConfig {
-        applicationId "com.demoflowapp"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
-        buildConfigField("String", "FLOW_API_KEY", "\"pk_sbox_guri7tp655hvceb3qaglozm7gee\"") // Public key for Flow SDK
-    }
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
-        release {
-            signingConfig signingConfigs.debug
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-        }
-    }
-}
+The `FlowModule.kt` file bridges React Native's JavaScript with the Flow SDK.
 
-dependencies {
-    implementation("com.facebook.react:react-android")
-    implementation("com.checkout:checkout-android-components:1.0.0-beta-1") // Flow SDK dependency
-
-    if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
-    }
-}
-```
-
----
-
-### 6.2 Add Native Modules
-
-### `FlowModule.kt`
-
-The `FlowModule.kt` file bridges React Native's JavaScript with the Flow SDK. Below is the updated information, including the imports used, the `Unresolved reference` issues, and the method used for rendering the Flow component.
-
-**Key Imports:**
-The following imports are required for proper integration of the Flow SDK. Missing these can lead to `Unresolved reference` errors.
+**Thing to note:**
+1. The following imports are required for proper integration of the Flow SDK. Missing these can lead to `Unresolved reference` errors.
 
 ```kotlin
 import com.checkout.components.core.CheckoutComponentsFactory
@@ -613,52 +501,53 @@ import com.checkout.components.interfaces.api.CheckoutComponents
 import com.checkout.components.interfaces.component.ComponentCallback
 ```
 
-**Explanation of Key Methods:**
-
-- **`CheckoutComponentsFactory`**: Used to create an instance of `CheckoutComponents`.
-- **`CheckoutComponentConfiguration`**: Configuration object for initializing the Flow component.
-- **`ComponentCallback`**: Manages callback events, such as `onReady`, `onSubmit`, `onSuccess`, and `onError`.
-
-**Key Code for Rendering the Flow Component:**
-
-In the official documentation, the method `checkoutComponent.provideCheckoutComponentsLayout(containerView)` is suggested for rendering. However, this method didn’t work in our case. Instead, we used the following method:
+2. In the official documentation, the method `checkoutComponent.provideCheckoutComponentsLayout(containerView)` is suggested for rendering. However, this method is a typo. Use the following method instead:
 
 ```kotlin
 val view = flowComponent.provideView(containerView)
 ```
 
-This method successfully provided a view of the Flow component. The view was added to a dynamically created `FrameLayout`.
+---
 
-**Code Snippet:**
+#### `FlowPackage.kt`
+
+The `FlowPackage.kt` file plays a critical role in making the native `FlowModule` accessible from JavaScript. It acts as a bridge initializer by registering the `FlowModule` with React Native.
+
+**Key Responsibilities:**
+
+1. **Register Native Modules**: It ensures `FlowModule` is exposed to React Native and can be accessed via `NativeModules.FlowModule` in JavaScript.
+2. **Bridge Initialization**: Ensures smooth communication between JavaScript and native code.
+
+---
+
+#### Adding `FlowPackage` to MainApplication.kt
+
+After creating `FlowPackage.kt`, we must register it in **MainApplication.kt**. This step connects the package to React Native's runtime, making the module available to the app.
+
+**Steps to Add `FlowPackage`:**
+
+1. Open `MainApplication.kt`.
+2. Locate the `getPackages()` method.
+3. Add the following line to include `FlowPackage`:
 
 ```kotlin
-val flowComponent = checkoutComponents.create(ComponentName.Flow)
-
-// Render the Flow component
-withContext(Dispatchers.Main) {
-    val view = flowComponent.provideView(containerView)
-    if (view != null) {
-        containerView.addView(view)
-    } else {
-        val fallbackTextView = TextView(context).apply {
-            text = "Flow component failed to render."
-            textSize = 20f
-            setTextColor(Color.RED)
-        }
-        containerView.addView(fallbackTextView)
-    }
-}
+packages.add(FlowPackage())
 ```
 
 ---
 
-### `FlowPackage.kt`
+### **Summary of the Bridging Process**
 
-This file registers the `FlowModule` to be accessible from JavaScript.
+1. **`FlowModule.kt`**: Defines the native functionality and exposes it to JavaScript.
+2. **`FlowPackage.kt`**: Registers `FlowModule` with React Native.
+3. **MainApplication.kt**: Connects `FlowPackage` to React Native's runtime to make it available in the app.
 
----
+By completing these steps, the native module `FlowModule` is fully integrated and ready to be accessed from JavaScript.
 
-### 6.3 Common Issues and Resolutions
+### 6.3 (EXTRA) Common Issues and Resolutions
+
+<details>
+<summary>Learn More</summary>
 
 - **Hanging Gradle Processes:**
 Use `ps aux | grep gradle` to find Gradle processes and `kill -9 <PID>` to terminate them.
@@ -686,7 +575,13 @@ Reset the Metro bundler cache to resolve issues with stale files:
     ```
 - **Gradle Sync Required:** After verifying or installing the necessary Android SDK versions, always sync the Gradle files in Android Studio. Click on the **Elephant icon** in the top toolbar to ensure the project is properly synchronized.
 
+</details>
+
+
 ### 6.4. Android Studio Tips and Tricks
+
+<details>
+<summary>Learn More</summary>
 
 If you’re new to Android Studio, just like me, here are some helpful tips:
 
@@ -696,3 +591,5 @@ If you’re new to Android Studio, just like me, here are some helpful tips:
 4. **Logcat**: Open **View > Tool Windows > Logcat** to access application logs.
 5. **SDK Location**: Modify the Android SDK path in **File > Project Structure > SDK Location** if necessary. I had to modify it to `/Users/dmytro.anikin/Library/Android/sdk`. 
 6. **Project Dependencies**: Check dependencies in **File > Project Structure > Dependencies**. Verify that `checkout-android-components` is included after adding it as a dependency in `android/app/build.gradle`.
+
+</details>
