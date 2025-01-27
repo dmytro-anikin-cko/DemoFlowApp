@@ -408,7 +408,10 @@ npx react-native doctor
 
 Resolve any reported issues, such as missing Android SDK components or incompatible Java versions.
 
-### 5.1 Troubleshooting Common Issues
+### 5.1 (EXTRA) Troubleshooting Common Issues
+
+<details>
+<summary>Learn More</summary>
 
 #### Gradle Sync Errors
 
@@ -428,6 +431,7 @@ rm -rf node_modules
 npm install
 npx react-native start --reset-cache
 ```
+</details>
 
 ## 6. Integrating the Flow SDK and Configuring the Project
 
@@ -480,6 +484,17 @@ This file configures app-level Gradle settings.
 - Added the Flow SDK dependency: `implementation("com.checkout:checkout-android-components:1.0.0-beta-1")`.
 - Defined `FLOW_API_KEY` in `buildConfigField` for secure API key management.
 
+#### Sync Gradle Files
+After making changes to the Gradle files, it’s essential to sync them in Android Studio to ensure the configurations are applied correctly.
+
+1. Open Android Studio.
+2. Locate the Elephant icon in the top toolbar.
+3. Click on it to sync your Gradle files with the project.
+
+This step will fetch dependencies and apply the updated configurations. Any issues with the Gradle sync will be displayed in the Build output.
+
+> Note: Ensure all Android SDK dependencies (e.g., Build Tools, Platform Tools) are installed as per Section 2.1 if the sync fails.
+> 
 
 ### 6.2 Add Native Modules & Bridge
 
@@ -543,6 +558,33 @@ packages.add(FlowPackage())
 3. **MainApplication.kt**: Connects `FlowPackage` to React Native's runtime to make it available in the app.
 
 By completing these steps, the native module `FlowModule` is fully integrated and ready to be accessed from JavaScript.
+
+---
+
+### Rebuild the Project
+Once you’ve created and registered the native modules, it’s essential to rebuild your project to incorporate the changes. Follow these steps:
+
+1. Clean the Gradle build cache:
+```bash
+./gradlew clean
+```
+This command removes all previously compiled files and build artifacts, ensuring a fresh build.
+
+2. Build the project using Gradle:
+
+```bash
+./gradlew build
+```
+This resolves dependencies and compiles the project.
+
+3. Rebuild and launch the app:
+
+```bash
+npx react-native run-android
+```
+Note: If any errors occur during the ./gradlew build process, check the logs in the terminal or Android Studio's Build Output tab to diagnose the issue. Always ensure your dependencies are synced (see Section 6.1) before proceeding.
+
+---
 
 ### 6.3 (EXTRA) Common Issues and Resolutions
 
