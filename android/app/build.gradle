@@ -85,7 +85,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        buildConfigField("String", "FLOW_API_KEY", "\"pk_sbox_guri7tp655hvceb3qaglozm7gee\"")
+        buildConfigField("String", "FLOW_API_KEY", "\"pk_sbox_unhsp6d22qf2w4wscmd7yvapmys\"")
     }
     signingConfigs {
         debug {

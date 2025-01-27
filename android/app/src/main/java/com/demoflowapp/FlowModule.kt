@@ -81,7 +81,7 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
                 paymentSessionSecret = paymentSessionSecret
             ),
             componentCallback = customComponentCallback,
-            publicKey = "pk_sbox_unhsp6d22qf2w4wscmd7yvapmys", // Replace with your API key
+            publicKey = BuildConfig.FLOW_API_KEY, // Replace with your API key
             environment = Environment.SANDBOX // Use Environment.LIVE for production
         )
 
