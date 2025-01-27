@@ -1,6 +1,6 @@
 # **Comprehensive Guide to Setting Up React Native with Checkout.com's Flow SDK**
 
-This guide provides a complete walkthrough for setting up a React Native development environment and integrating Checkout.com's Flow SDK. It includes detailed instructions, common troubleshooting steps, and essential tips to ensure a smooth and efficient setup process for your project.
+This guide provides a complete walkthrough for setting up a React Native development environment and integrating [Checkout.com's Android Flow SDK](https://www.checkout.com/docs/payments/accept-payments/accept-a-payment-on-your-mobile-app/get-started-with-flow-for-mobile). It includes detailed instructions, common troubleshooting steps, and essential tips to ensure a smooth and efficient setup process for your project.
 
 ---
 
@@ -19,7 +19,7 @@ Before you begin, ensure the following tools and dependencies are installed:
 
 ### 2.1 Install Android Studio
 
-1. Download and install Android Studio.
+1. Download and install [Android Studio](https://developer.android.com/studio) along with [Command Line tools](https://developer.android.com/studio) (scroll to the bottom of the page).
 2. Open Android Studio and configure:
     - **Android SDK**: Install the required SDK tools (e.g., Build Tools, Platform Tools).
     - **Emulator**: Use the Device Manager to create and configure an Android Virtual Device (AVD).
@@ -578,7 +578,7 @@ Reset the Metro bundler cache to resolve issues with stale files:
 </details>
 
 
-### 6.4. Android Studio Tips and Tricks
+### 6.4 (EXTRA) Android Studio Tips and Tricks
 
 <details>
 <summary>Learn More</summary>
