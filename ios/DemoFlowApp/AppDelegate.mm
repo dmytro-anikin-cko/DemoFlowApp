@@ -1,6 +1,9 @@
 #import "AppDelegate.h"
 
 #import <React/RCTBundleURLProvider.h>
+#import "React/RCTBridgeModule.h"
+#import "React/RCTBridge.h"  // Add this
+#import "DemoFlowApp-Swift.h" // This will bridge your Swift class to React Native
 
 @implementation AppDelegate
 

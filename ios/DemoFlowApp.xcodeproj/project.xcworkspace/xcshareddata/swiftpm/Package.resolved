@@ -1,0 +1,15 @@
+{
+  "originHash" : "2ec63847507796054d21f7a624242b3bedd082e77eba63b5cb530e44adfe6f0e",
+  "pins" : [
+    {
+      "identity" : "checkout-ios-components",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/checkout/checkout-ios-components",
+      "state" : {
+        "revision" : "f1813a73f62987e7b83d1255e097120f32e0d65c",
+        "version" : "1.0.0-beta-3"
+      }
+    }
+  ],
+  "version" : 3
+}
