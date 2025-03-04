@@ -660,7 +660,7 @@ In my case, the output reported:
 ● ios-deploy - Required for installing your app on a physical device with the CLI
 ✓ .xcode.env - File to customize Xcode environment
 
-## 1.1 Install Xcod
+## 1.1 Install Xcode
 
 Since `npx react-native doctor` reported `✖ Xcode - Required for building and installing your app on iOS`, we need to check if Xcode is installed and properly set up.
 
