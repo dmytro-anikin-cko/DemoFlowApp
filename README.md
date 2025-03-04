@@ -1,8 +1,10 @@
-# **Comprehensive Guide to Setting Up React Native with Checkout.com's Flow SDK**
+# **Comprehensive Guide to Setting Up React Native with Checkout.com's Flow Android & iOS SDKs**
 
-This guide provides a complete walkthrough for setting up a React Native development environment and integrating [Checkout.com's Android Flow SDK](https://www.checkout.com/docs/payments/accept-payments/accept-a-payment-on-your-mobile-app/get-started-with-flow-for-mobile). It includes detailed instructions, common troubleshooting steps, and essential tips to ensure a smooth and efficient setup process for your project.
+This guide provides a complete walkthrough for setting up a React Native development environment and integrating [Checkout.com's Android Flow SDK](https://www.checkout.com/docs/payments/accept-payments/accept-a-payment-on-your-mobile-app/get-started-with-flow-for-mobile) for both Android & iOS. It includes detailed instructions, common troubleshooting steps, and essential tips to ensure a smooth and efficient setup process for your project.
 
 ---
+
+# Android
 
 ## 1. Prerequisites
 
@@ -635,3 +637,613 @@ If you’re new to Android Studio, just like me, here are some helpful tips:
 6. **Project Dependencies**: Check dependencies in **File > Project Structure > Dependencies**. Verify that `checkout-android-components` is included after adding it as a dependency in `android/app/build.gradle`.
 
 </details>
+
+
+---
+
+# iOS
+
+## **1. Verify Your iOS Development Environment**
+
+Before integrating the Checkout iOS SDK, ensure your environment is properly set up. Run: npx react-native doctor
+
+In my case, the output reported: 
+
+✖ Xcode - Required for building and installing your app on iOS
+
+- Version found: N/A
+- Version supported: >= 12.x
+✓ Ruby - Required for installing iOS dependencies
+✖ CocoaPods - Required for installing iOS dependencies
+- Version found: N/A
+- Version supported: >= 1.10.0
+● ios-deploy - Required for installing your app on a physical device with the CLI
+✓ .xcode.env - File to customize Xcode environment
+
+## 1.1 Install Xcod
+
+Since `npx react-native doctor` reported `✖ Xcode - Required for building and installing your app on iOS`, we need to check if Xcode is installed and properly set up.
+
+1. If you haven’t installed Xcode, install it through [Mac App Store](https://apps.apple.com/us/app/xcode/id497799835?mt=12) or CKO Self Service Portal.
+2. Run this command in the terminal to c**heck if Xcode is installed**
+    
+    ```bash
+    xcode-select -p
+    ```
+    
+    - If it outputs a valid path (e.g., `/Applications/Xcode.app/Contents/Developer`), Xcode is installed.
+    - In my case, the output was /Library/Developer/CommandLineTools, which means **only the Command Line Tools** are installed, but not the full **Xcode IDE**. We need to switch it to the full Xcode IDE.
+        - Run this command to set the correct Xcode path:
+            
+            ```bash
+            sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+            ```
+            
+        - Run xcode-select -p again to verify the change. The output should now be: /Applications/Xcode.app/Contents/Developer
+        - Run npx react-native doctor to check if Xcode is now recognized by React Native
+
+### **1.2 Install CocoaPods**
+
+The doctor output also showed `✖ CocoaPods - Required for installing iOS dependencies`.
+
+1. Install CocoaPods using Homebrew:
+    
+    ```bash
+    brew install cocoapods
+    ```
+    
+2. Verify the installation:
+    
+    ```bash
+    pod --version
+    ```
+    
+    - If the version is `>= 1.10.0`, you're good to go.
+3. **After Installing CocoaPods**
+    
+    Since you're using an **existing React Native project**, navigate to the `ios/` folder inside your project and install dependencies:
+    
+    ```bash
+    cd /path/to/your/react-native-project/ios
+    pod install
+    ```
+    
+    > Important: Always run pod install inside the ios/ folder after adding iOS dependencies.
+    > 
+4. Once CocoaPods is installed and `pod install` is successful, run:
+    
+    ```bash
+    npx react-native doctor
+    ```
+    
+
+If everything looks good, you can move on to adding the **Checkout iOS SDK**! 🚀
+
+## 2. Add the Checkout iOS SDK
+
+### **2.1 Open the iOS Project in Xcode**
+
+1. Navigate to the `ios` folder inside your React Native project.
+    
+    ```bash
+    cd ios
+    ```
+    
+2. Open the project workspace in Xcode:
+    
+    ```bash
+    open YourProjectName.xcworkspace
+    ```
+    
+    - If the `.xcworkspace` file doesn't exist, run:
+        
+        ```bash
+        pod install
+        ```
+        
+
+### **2.2 Add the Checkout SDK via Swift Package Manager (SPM)**
+
+1. In Xcode, select your project from the left sidebar.
+2. Go to **Project > Package Dependencies**.
+3. Click the **+** button.
+4. In the URL field, enter:
+    
+    ```
+    https://github.com/checkout/checkout-ios-components
+    ```
+    
+5. Set **Dependency Rule** to **Up to Exact Version and input: 1.0.0-beta-3 (this is the latest version at the moment)**
+6. Set Add to Project to YourProjectName
+7. Click **Add Package**.
+8. Verify installation:
+    1. In the left panel, under Package dependencies section, you should see CheckoutComponents 
+    2. In the left panel, click on the first YourProjectName, then go to Project>YourProjectName, under Package Dependencies tab, you should see checkout-ios-components listed
+    3. In the left panel, click on the first YourProjectName, then go to Targets>YourProjectName, in the Link Binary with Libraries section, you should see CheckoutComponents. If not, add it by clicking on the plus icon, and searching for it.
+
+If everything looks good, you can proceed with 3. **Initializing CheckoutComponents** in your project.
+
+## 3. **Creating the Bridge for Flow SDK**
+
+React Native projects use Objective-C/Objective-C++ for their iOS entry point (`AppDelegate.h` and `AppDelegate.mm`), while the Checkout Flow SDK is built with Swift. This creates a bridging challenge that requires two distinct bridges:
+
+1. **Swift to Objective-C Bridge**: Since the iOS Flow SDK uses Swift but React Native uses Objective-C for native modules, we first need to make Swift code accessible to Objective-C.
+2. **Objective-C to JavaScript Bridge**: Then we need to expose our Objective-C interface to JavaScript so React Native can access it.
+
+The complete flow for a method call goes:
+
+- JavaScript (React Native) →
+- Objective-C (React Native bridge) →
+- Swift (CheckoutFlowManager) →
+- Checkout Flow SDK
+
+Let's set up these bridges step by step:
+
+### **3.1 Add Swift Support to the Project**
+
+### **Step 1: Add a Swift Bridging Header**
+
+1. In Xcode, right-click on your project folder (e.g., `YourProjectName`) and select **New File...**
+2. Choose **Swift File** and name it `Dummy.swift`
+3. When prompted "Would you like to configure an Objective-C bridging header?", click **Create Bridging Header**
+4. This will create:
+    - A `Dummy.swift` file (can be empty)
+    - A `YourProjectName-Bridging-Header.h` file
+
+### **Step 2: Update the Bridging Header**
+
+Open your bridging header file (`YourProjectName-Bridging-Header.h`) and add:
+
+```objectivec
+//
+//  Use this file to import your target's public headers that you would like to expose to Swift.
+//
+#import <React/RCTBridgeModule.h>
+#import <React/RCTViewManager.h>
+#import <React/RCTUtils.h>
+#import <React/RCTConvert.h>
+
+```
+
+### **3.2 Create the CheckoutFlowManager Swift Module**
+
+Create a new Swift file named `CheckoutFlowManager.swift`:
+
+1. Right-click on your project folder in Xcode
+2. Select **New File...**
+3. Choose **Swift File**
+4. Name it `CheckoutFlowManager.swift`
+5. Add the following code:
+
+```swift
+import SwiftUI
+import CheckoutComponentsSDK
+
+@objc(CheckoutFlowManager)
+class CheckoutFlowManager: NSObject {
+
+    private var checkoutComponents: CheckoutComponents?
+    private let publicKey = "YOUR_PUBLIC_KEY" // Replace with your actual public key
+    private let environment = CheckoutComponents.Environment.sandbox // Change to .production for live transactions
+
+    @objc static func requiresMainQueueSetup() -> Bool {
+        return false
+    }
+
+    @objc func initialize(_ paymentSession: NSDictionary, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+        guard let paymentSessionID = paymentSession["id"] as? String,
+              let paymentSessionSecret = paymentSession["payment_session_secret"] as? String else {
+            rejecter("ERROR", "Invalid payment session object", nil)
+            return
+        }
+
+        // Create a task to handle the async initialization
+        Task {
+            do {
+                // Create a PaymentSession instance
+                let session = PaymentSession(id: paymentSessionID, paymentSessionSecret: paymentSessionSecret)
+
+                // Configure the CheckoutComponents SDK
+                let config = try await CheckoutComponents.Configuration(
+                    paymentSession: session,
+                    publicKey: publicKey,
+                    environment: environment,
+                    callbacks: CheckoutComponents.Callbacks(
+                        onSuccess: { paymentMethod, paymentID in
+                            print("Payment successful: \(paymentID)")
+                        },
+                        onError: { error in
+                            print("Error: \(error)")
+                        }
+                    )
+                )
+                self.checkoutComponents = CheckoutComponents(configuration: config)
+                print("CheckoutComponents initialized successfully for \(environment) environment.")
+
+                // Resolve the promise on the main thread
+                DispatchQueue.main.async {
+                    resolver(["success": true])
+                }
+            } catch {
+                print("Failed to initialize CheckoutComponents: \(error)")
+                DispatchQueue.main.async {
+                    rejecter("INIT_ERROR", "Failed to initialize: \(error.localizedDescription)", error as NSError)
+                }
+            }
+        }
+    }
+
+    @objc func renderFlow(_ resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+        guard let checkoutComponents = checkoutComponents else {
+            rejecter("NOT_INITIALIZED", "CheckoutComponents not initialized", nil)
+            return
+        }
+
+        DispatchQueue.main.async {
+            guard let rootViewController = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap({ $0.windows })
+                .first(where: { $0.isKeyWindow })?.rootViewController else {
+                rejecter("NO_ROOT_VIEW", "Root view controller not found", nil)
+                return
+            }
+
+            do {
+                let flowComponent = try checkoutComponents.create(.flow())
+                let flowView = flowComponent.render()
+
+                let hostingController = UIHostingController(rootView: flowView)
+                hostingController.view.frame = rootViewController.view.bounds
+                hostingController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+                rootViewController.addChild(hostingController)
+                rootViewController.view.addSubview(hostingController.view)
+                hostingController.didMove(toParent: rootViewController)
+
+                resolver(["success": true])
+            } catch {
+                print("Failed to render Flow component: \(error)")
+                rejecter("RENDER_ERROR", "Failed to render Flow: \(error.localizedDescription)", error as NSError)
+            }
+        }
+    }
+
+    // Optional test method for verifying bridge communication
+    @objc func test(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        resolve(["status": "Bridge is working"])
+    }
+}
+
+```
+
+> Important: Replace YOUR_PUBLIC_KEY with your actual Checkout.com public key.
+> 
+
+### **3.3 Create the Objective-C Bridge**
+
+Create a new Objective-C file to expose your Swift module to React Native:
+
+1. Right-click on your project folder and select **New File...**
+2. Choose **Objective-C File**
+3. Name it `CheckoutFlowManagerBridge.m`
+4. Add the following code:
+
+```objectivec
+#import <Foundation/Foundation.h>
+#import <React/RCTBridgeModule.h>
+
+@interface RCT_EXTERN_MODULE(CheckoutFlowManager, NSObject)
+
+// Declare methods exposed to JavaScript with promise support
+RCT_EXTERN_METHOD(initialize:(NSDictionary *)paymentSession
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(renderFlow:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+// Optional test method
+RCT_EXTERN_METHOD(test:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+
+@end
+
+```
+
+### **3.4 Update AppDelegate.mm**
+
+In your `AppDelegate.mm` file, add the import for your Swift code and ensure the module name is properly registered:
+
+```objectivec
+#import "AppDelegate.h"
+#import <React/RCTBundleURLProvider.h>
+#import "React/RCTBridgeModule.h"
+#import "React/RCTBridge.h"
+#import "YourProjectName-Swift.h" // Replace YourProjectName with your actual project name
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+  self.moduleName = @"YourProjectName"; // Must match your React Native project name
+  // You can add your custom initial props in the dictionary below.
+  // They will be passed down to the ViewController used by React Native.
+  self.initialProps = @{};
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+- (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
+{
+  return [self bundleURL];
+}
+
+- (NSURL *)bundleURL
+{
+#if DEBUG
+  return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];
+#else
+  return [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+#endif
+}
+
+@end
+
+```
+
+> Important:
+> 
+> 1. Replace `YourProjectName-Swift.h` with your actual project name
+> 2. Ensure `self.moduleName = @"YourProjectName";` matches your React Native project name
+> 3. Do not modify the rest of the AppDelegate template code unless you know what you're doing
+
+## 3.5 Files Overview
+
+Here's a comprehensive table of all files involved in the iOS Flow SDK integration:
+
+| File | Format | Purpose | Description |
+| --- | --- | --- | --- |
+| **AppDelegate.h** | Objective-C Header | App Entry Point Declaration | Contains the declaration of the AppDelegate class which is the entry point for your iOS app. You typically don't need to modify this file. |
+| **AppDelegate.mm** | Objective-C++ | App Entry Point Implementation | Contains the implementation of your app's entry point. You need to import your Swift header file here and ensure module name registration. |
+| **YourProjectName-Bridging-Header.h** | C Header | Swift-to-Objective-C Bridge | Allows your Swift code to use Objective-C code. Contains imports for React Native bridge modules. |
+| **Dummy.swift** | Swift | Enable Swift in the Project | An empty Swift file that triggers Xcode to set up Swift support for your Objective-C project. Can be empty but must exist. |
+| **CheckoutFlowManager.swift** | Swift | SDK Wrapper | Implements the interface between React Native and the Checkout.com Flow SDK. Contains methods for initializing and rendering the payment flow. |
+| **CheckoutFlowManagerBridge.m** | Objective-C | JavaScript-to-Swift Bridge | Exposes your Swift methods to JavaScript using the React Native bridge macros. Declares which methods from your Swift file will be available in JavaScript. |
+| **App.tsx** (or your payment component) | TypeScript/JavaScript | React Native UI | Implements the React Native UI that calls your native module methods. Contains platform-specific code to handle both iOS and Android. |
+
+### File Relationships and Data Flow
+
+1. **JavaScript to Native:**
+    - Your React Native code (`App.tsx`) calls methods on `NativeModules.CheckoutFlowManager`
+    - React Native bridge processes these calls through `CheckoutFlowManagerBridge.m`
+    - The bridge invokes methods on your Swift `CheckoutFlowManager` class
+2. **Swift to SDK:**
+    - `CheckoutFlowManager.swift` interacts with the Checkout.com SDK
+    - It initializes the SDK and renders the payment UI
+    - Results from the SDK are passed back through promises
+3. **Project Setup:**
+    - `AppDelegate.mm` is the iOS app entry point that registers your React Native module
+    - `YourProjectName-Bridging-Header.h` makes React Native's Objective-C code available to Swift
+    - `Dummy.swift` ensures Swift runtime is included in your Objective-C project
+
+## 4. **Using the Flow SDK in React Native**
+
+Now that the bridge is set up, it's time to use it in your React Native code.
+
+### **4.1 Accessing the Native Module**
+
+Update your `App.tsx` or create a new component for handling payments:
+
+```tsx
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, Button, StyleSheet, Platform, Text, View } from 'react-native';
+import { NativeModules } from 'react-native';
+
+// Import both native modules for Android and iOS
+const { FlowModule, CheckoutFlowManager } = NativeModules;
+
+// Debug log to check module availability
+console.log('Checking CheckoutFlowManager:', CheckoutFlowManager);
+console.log('Checking FlowModule:', FlowModule);
+
+// Platform-specific validation
+if (Platform.OS === 'ios' && !CheckoutFlowManager) {
+  console.error('CheckoutFlowManager is not linked properly for iOS.');
+}
+
+if (Platform.OS === 'android' && !FlowModule) {
+  console.error('FlowModule is not linked properly for Android.');
+}
+
+function App(): React.JSX.Element {
+  const [status, setStatus] = useState('Ready');
+  const [error, setError] = useState<string | null>(null);
+
+  const startPayment = async () => {
+    setStatus('Processing...');
+    setError(null);
+
+    try {
+      // Sample payment session data - replace with your actual data
+      const paymentSession = {
+        id: 'ps_2suPXYzTTZOds0pW0VhNsIJa7Zf',
+        payment_session_secret: 'pss_d461278c-5fb6-47fa-a025-a131b34ce286r'
+      };
+
+      if (Platform.OS === 'ios') {
+        console.log('Initializing iOS payment flow...');
+        try {
+          // Optional: Test bridge functionality
+          const testResult = await CheckoutFlowManager.test();
+          console.log('Bridge test result:', testResult);
+
+          // Initialize checkout component
+          const initResult = await CheckoutFlowManager.initialize(paymentSession);
+          console.log('iOS initialization result:', initResult);
+
+          // Render the payment UI
+          const renderResult = await CheckoutFlowManager.renderFlow();
+          console.log('iOS render result:', renderResult);
+
+          setStatus('Payment flow started');
+        } catch (iosError) {
+          console.error('iOS payment error:', iosError);
+          setError(`iOS Error: ${iosError instanceof Error ? iosError.message : String(iosError)}`);
+          setStatus('Error');
+        }
+      } else if (Platform.OS === 'android') {
+        console.log('Initializing Android payment flow...');
+        try {
+          // For Android, use the existing implementation
+          FlowModule.startPaymentSession(
+            paymentSession.id,
+            'YOUR_PAYMENT_SESSION_TOKEN', // Replace with actual token
+            paymentSession.payment_session_secret
+          );
+          setStatus('Payment flow started');
+        } catch (androidError) {
+          console.error('Android payment error:', androidError);
+          setError(`Android Error: ${androidError instanceof Error ? androidError.message : String(androidError)}`);
+          setStatus('Error');
+        }
+      }
+    } catch (error) {
+      console.error('General payment error:', error);
+      setError(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      setStatus('Error');
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Checkout.com Flow Demo</Text>
+
+      {/* Status display */}
+      <View style={styles.statusContainer}>
+        <Text>Status: </Text>
+        <Text style={
+          status === 'Error' ? styles.errorText :
+          status === 'Processing...' ? styles.processingText :
+          status === 'Payment flow started' ? styles.successText :
+          styles.readyText
+        }>
+          {status}
+        </Text>
+      </View>
+
+      {/* Error message if any */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {/* Module detection info */}
+      <View style={styles.moduleInfoContainer}>
+        <Text>iOS Module: {CheckoutFlowManager ? '✅ Available' : '❌ Missing'}</Text>
+        <Text>Android Module: {FlowModule ? '✅ Available' : '❌ Missing'}</Text>
+        <Text>Current Platform: {Platform.OS}</Text>
+      </View>
+
+      <Button
+        title="Start Payment Session"
+        onPress={startPayment}
+        disabled={status === 'Processing...'}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  errorContainer: {
+    backgroundColor: '#ffeeee',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 20,
+    width: '100%',
+  },
+  moduleInfoContainer: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 20,
+    width: '100%',
+  },
+  successText: {
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    fontWeight: 'bold',
+  },
+  processingText: {
+    color: 'blue',
+    fontWeight: 'bold',
+  },
+  readyText: {
+    color: 'black',
+  },
+});
+
+export default App;
+
+```
+
+## 5. Build and Test Your Integration
+
+### **5.1 Final Steps and Verification**
+
+1. **Clean your project**: In Xcode, go to **Product > Clean Build Folder**
+2. **Restart Metro**: Kill the current Metro server and restart with a clean cache:
+    
+    ```bash
+    npx react-native start --reset-cache
+    
+    ```
+    
+3. **Run the app on iOS simulator**:
+    
+    ```bash
+    npx react-native run-ios
+    
+    ```
+    
+
+### **5.2 Troubleshooting Tips**
+
+If you encounter any issues during the integration or at runtime, try these troubleshooting steps:
+
+### Module Not Found or App Crashing
+
+1. **Check module registration**:
+    - Ensure the module name matches exactly in Swift and JavaScript
+    - Verify your bridging header has the correct imports
+    - Check that `YourProjectName-Swift.h` is correctly named in AppDelegate.mm
+2. **Verify Swift version compatibility**:
+    - In Xcode, go to **Build Settings > Swift Compiler - Language**
+    - Ensure Swift language version is compatible with the SDK
+3. **Add more logging**:
+    - Add `console.log()` statements in JavaScript to track execution
+    - Add `print()` statements in Swift to track native code execution
+4. **Test with a simplified version**:
+    - Create a simple test method in your Swift module
+    - Call it from React Native to verify basic communication works
+5. **Check Xcode and Metro logs**:
+    - Xcode console will show Swift/Objective-C errors
+    - Metro console will show JavaScript errors
